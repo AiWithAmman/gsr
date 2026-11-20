@@ -1,0 +1,81 @@
+# Python bytecode / caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Build / packaging (e.g. PyInstaller)
+build/
+dist/
+*.egg-info/
+*.spec
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+*.env
+secrets.*
+secret.*
+credentials*.json
+client_secret*.json
+service-account*.json
+token.json
+*.token
+config.local.*
+local_settings.py
+
+# Keys & certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.jks
+*.keystore
+id_rsa*
+id_ed25519*
+*.ppk
+.ssh/
+
+# Cloud / tool credentials
+.aws/
+.azure/
+.gcloud/
+.npmrc
+.pypirc
+.netrc
+.git-credentials
+
+# Logs, dumps & local databases
+*.log
+logs/
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.bak
+
+# App runtime state (saved toggle values)
+settings_state.json
+settings_state.json.tmp
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
