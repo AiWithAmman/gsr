@@ -1,5 +1,7 @@
 import json
 import os
+import datetime
+
 
 
 class SettingsStore:
@@ -18,8 +20,17 @@ class SettingsStore:
         return self.data.get(key, default)
 
     def set(self, key, value):
+        old_value = self.data.get(key)
+
+        if old_value == value:
+            return
+        
         self.data[key]= value
-        self.save()
+        
+        if key.startswith(("diag.", "perm.", "security.", "general.", "speech.", "inking.", "activity.")):
+            self.record_change(key, old_value, value)
+        else:
+            self.save()
 
     def save(self):
         try:
@@ -29,3 +40,25 @@ class SettingsStore:
             os.replace(tmp, self.path)
         except OSError:
             pass
+
+    def get_history(self):
+        return self.data.get("_privacy_history",[])
+
+    def add_listener(self, callback):
+        if not hasattr(self, "listeners"):
+            self.listeners = []
+        self.listeners.append(callback)
+
+    def record_change(self, key, old_value, new_value):
+
+        history = self.data.setdefault("_privacy_history",[])
+
+        event = { "key": key, "old_value": old_value, "new_value": new_value, 
+            "timestamp": datetime.datetime.now().astimezone().isoformat(timespec = "seconds")}
+
+        history.append(event)
+        
+        self.save()
+
+        for callback in getattr(self, "listeners", []):
+            callback(event)

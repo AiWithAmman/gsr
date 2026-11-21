@@ -41,6 +41,9 @@ class WindowsSettings:
         self.store= SettingsStore(STATE_FILE)
         self.history=[]
         self.current=None
+        self.notification_frame = None
+        self.notification_timer = None
+        self.store.add_listener(self._on_privacy_setting_changed)
 
         self.routes= {"home": ("Home", Home.build)}
         for key, title, _icon in NAV_ITEMS:
@@ -128,6 +131,48 @@ class WindowsSettings:
             return
         matches.sort(key=lambda rid: (not self.routes[rid][0].lower().startswith(query), len(rid)))
         self.open(matches[0])
+
+    def _on_privacy_setting_changed(self, event):
+        key = event["key"]
+        old_value = event["old_value"]
+        new_value = event["new_value"]
+
+        setting_name = key.replace(".", " ").replace("_", " ").title()
+
+        if(isinstance(old_value, bool)):
+            old_value = "On" if old_value else "Off"
+
+        if(isinstance(new_value, bool)):
+            new_value = "On" if new_value else "Off"
+        
+        if self.notification_timer is not None:
+            self.root.after_cancel(self.notification_timer)
+            self.notification_timer = None
+
+        if self.notification_frame is not None:
+            if self.notification_frame.winfo_exists():
+                self.notification_frame.destroy()
+            self.notification_frame = None
+
+        self.notification_frame = tk.Frame(self.root, bg = T.CARD, highlightbackground = T.SUBTEXT, highlightthickness = 1)
+
+        self.notification_frame.place(relx = 1.0, rely = 1.0, anchor = "se", x =- T.px(20), y =- T.px(20), width = T.px(320), height = T.px(85))
+
+        tk.Label(self.notification_frame, text = "Privacy setting changed", font = T.font(10, "semibold"), bg = T.CARD,
+            fg = T.TEXT).pack(anchor = "w", padx = T.px(12), pady = (T.px(8), 0))
+
+        tk.Label(self.notification_frame, text = f"{setting_name}: {old_value} -> {new_value}", 
+            font = T.font(9), bg = T.CARD, fg = T.SUBTEXT, wraplength = T.px(290)).pack(anchor = "w", padx = T.px(12), pady = T.px(5))
+
+        self.notification_timer = self.root.after(4000, self._remove_notification)
+
+
+    def _remove_notification(self):
+        if self.notification_frame is not None:
+            if self.notification_frame.winfo_exists():
+                self.notification_frame.destroy()
+        self.notification_frame = None
+        self.notification_timer = None
 
 
 def _enable_dpi_awareness():

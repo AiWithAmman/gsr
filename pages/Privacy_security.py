@@ -88,6 +88,13 @@ def build_main(parent, app):
         desc= _on_off(store.get(f"perm.{slug}.access", True))
         stack(SettingRow(parent, title, desc, icon,
                          on_click=lambda s=slug: app.open(f"privacy/{s}")))
+    
+    stack(SettingRow(
+        parent,
+        "Privacy activity history",
+        "Review and restore previous privacy setting changes",
+        "history",
+        on_click=lambda: app.open("privacy/history")))
 
 
 PROTECTION_AREAS= [
@@ -215,6 +222,56 @@ def build_inking(parent, app):
 
     Button(f, "Clear your personal dictionary", command=clear).pack(anchor="w")
     privacy_resources(parent)
+
+
+def build_privacy_history(parent, app):
+    store = app.store
+
+    paragraph(
+        parent,
+        "Review changes made to your privacy settings. "
+        "You can see what changed and restore a previous value."
+    )
+
+    section_header(parent, "Recent changes")
+
+    history = store.get_history()
+
+    if not history:
+        paragraph(parent, "No privacy setting changes have been recorded yet.")
+        return
+
+    for event in reversed(history):
+        key = event.get("key", "Unknown setting")
+        old_value = event.get("old_value")
+        new_value = event.get("new_value")
+        timestamp = event.get("timestamp", "")
+
+        setting_name = key.replace(".", " ").replace("_", " ").title()
+
+        if isinstance(old_value, bool):
+            old_value = "On" if old_value else "Off"
+
+        if isinstance(new_value, bool):
+            new_value = "On" if new_value else "Off"
+
+        section_header(parent, setting_name)
+
+        paragraph(parent, f"{old_value}  ->  {new_value}\n{timestamp}")
+
+        def restore_setting(setting_key = key, previous_value = event.get("old_value")):
+            if previous_value is None:
+                messagebox.showwarning("Cannot restore", "The previous value was not recorded.")
+                return
+
+            confirm = messagebox.askyesno("Restore privacy setting", f"Restore {setting_name} to its previous value?")
+
+            if confirm:
+                store.set(setting_key, previous_value)
+                app.open("privacy/history")
+
+        tk.Button( parent, text="Restore", command=restore_setting, font=T.font(9), 
+            bg=T.CARD, fg=T.TEXT, relief="flat", cursor="hand2").pack(anchor="e", pady=(0, T.px(10)))
 
 
 def build_activity(parent, app):
@@ -378,6 +435,7 @@ def routes():
         "privacy/activity": ("Activity history", build_activity),
         "privacy/search-permissions": ("Search permissions", build_search_permissions),
         "privacy/searching-windows": ("Searching Windows", build_searching_windows),
+        "privacy/history": ("Privacy activity history", build_privacy_history),
     }
     for slug, title, noun, _icon, apps, desktop in APP_PERMISSIONS:
         r[f"privacy/{slug}"]= (title, make_permission_page(slug, title, noun, apps, desktop))
