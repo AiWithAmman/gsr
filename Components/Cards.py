@@ -205,8 +205,8 @@ def stack(widget):
 
 
 def section_header(parent, text):
-    lbl= tk.Label(parent, text=text, font=T.font(10, "semibold"), bg=T.BG, fg=T.TEXT, anchor="w")
-    lbl.pack(fill="x", pady=(T.px(22), T.px(8)))
+    lbl= tk.Label(parent, text=text, font=T.font(18, "bold"), bg=T.BG, fg=T.TEXT, anchor="w")
+    lbl.pack(fill="x", pady=(T.px(26), T.px(10)))
     return lbl
 
 
