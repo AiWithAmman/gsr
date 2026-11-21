@@ -28,11 +28,9 @@ def build(parent, app):
     links= [
         ("privacy", "Privacy & security", "Review security and the permissions apps have", "privacy"),
         ("privacy/diagnostics", "Diagnostics & feedback", "Choose what diagnostic data is sent", "diagnostic"),
-        ("privacy/location", "Location",
-         "On" if store.get("perm.location.access", True) else "Off", "location"),
+        ("privacy/location", "Location", "On" if store.get("perm.location.access", True) else "Off", "location"),
         ("privacy/camera", "Camera", "On" if store.get("perm.camera.access", True) else "Off", "camera"),
-        ("privacy/microphone", "Microphone",
-         "On" if store.get("perm.microphone.access", True) else "Off", "microphone"),
+        ("privacy/microphone", "Microphone", "On" if store.get("perm.microphone.access", True) else "Off", "microphone"),
         ("privacy/windows-security", "Windows Security", "No actions needed.", "shield"),
     ]
     for route, title, desc, icon in links:

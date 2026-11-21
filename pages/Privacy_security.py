@@ -73,6 +73,38 @@ def _on_off(value):
 def build_main(parent, app):
     store= app.store
 
+
+    section_header(parent, "Privacy Dashboard")
+
+    dashboard = tk.Frame(parent, bg=T.BG)
+    dashboard.pack(fill="x", pady=(0, T.px(8)))
+
+    dashboard.grid_columnconfigure(0, weight=1, uniform="dashboard")
+    dashboard.grid_columnconfigure(1, weight=1, uniform="dashboard")
+
+    dashboard_rows = [
+        SettingRow(dashboard, "Camera", f"Camera access: {_on_off(store.get('perm.camera.access', True))}", "camera", on_click = lambda: app.open("privacy/camera")),
+
+        SettingRow(dashboard, "Microphone", f"Microphone access: {_on_off(store.get('perm.microphone.access', True))}", "microphone", on_click = lambda: app.open("privacy/microphone")),
+
+        SettingRow(dashboard, "Location", f"Location access: {_on_off(store.get('perm.location.access', True))}", "location", on_click=lambda: app.open("privacy/location")),
+
+        SettingRow(dashboard, "Diagnostic Data", "View your diagnostic and feedback settings", "diagnostic", on_click=lambda: app.open("privacy/diagnostics")),
+
+        SettingRow(dashboard, "Recent Privacy Changes", "View your privacy history and restore previous settings", "history", on_click=lambda: app.open("privacy/history")),
+
+        SettingRow(dashboard, "Activity & Personalization", "Review activity history and personalization settings", "history", on_click=lambda: app.open("privacy/activity"))
+    ]
+
+    for index, row in enumerate(dashboard_rows):
+        row.grid(
+            row=index // 2,
+            column=index % 2,
+            sticky="nsew",
+            padx=T.px(4),
+            pady=T.px(4)
+        )
+
     section_header(parent, "Security")
     for route, title, desc, icon in SECURITY:
         if route == "privacy/find-my-device":
