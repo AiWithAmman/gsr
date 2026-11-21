@@ -20,8 +20,14 @@ def build(parent, app):
                           "Help improve Windows and keep it secure, up to date and working as expected",
                           "diagnostic", expanded=True))
     diag.row("Send optional diagnostic data",
-             "Include data about websites you browse, how you use apps and features, plus "
-             "additional info about device health, device activity, and enhanced error reporting",
+             "Diagnostic data is information about your device, Windows, and how "
+             "they work. It can include details such as device settings, "
+             "performance, app activity, errors, and problems Windows encounters. "
+             "When this is turned on, Windows sends additional optional information "
+             "to Microsoft, including more details about how you use apps and features, "
+             "to help improve Windows and fix problems. When turned off, this extra "
+             "optional information is not sent, but required diagnostic data is still "
+             "sent to help keep your device secure and working properly. ",
              toggle=store.get("diag.optional", False),
              on_toggle=lambda v: store.set("diag.optional", v))
 
