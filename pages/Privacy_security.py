@@ -83,6 +83,10 @@ def build_main(parent, app):
     dashboard.grid_columnconfigure(1, weight=1, uniform="dashboard")
 
     dashboard_rows = [
+        SettingRow(dashboard, "Recent Privacy Changes", "View your privacy history and restore previous settings", "history", on_click=lambda: app.open("privacy/history")),
+
+        SettingRow(dashboard, "Activity & Personalization", "Review activity history and personalization settings", "history", on_click=lambda: app.open("privacy/activity")),
+
         SettingRow(dashboard, "Camera", f"Camera access: {_on_off(store.get('perm.camera.access', True))}", "camera", on_click = lambda: app.open("privacy/camera")),
 
         SettingRow(dashboard, "Microphone", f"Microphone access: {_on_off(store.get('perm.microphone.access', True))}", "microphone", on_click = lambda: app.open("privacy/microphone")),
@@ -90,10 +94,6 @@ def build_main(parent, app):
         SettingRow(dashboard, "Location", f"Location access: {_on_off(store.get('perm.location.access', True))}", "location", on_click=lambda: app.open("privacy/location")),
 
         SettingRow(dashboard, "Diagnostic Data", "View your diagnostic and feedback settings", "diagnostic", on_click=lambda: app.open("privacy/diagnostics")),
-
-        SettingRow(dashboard, "Recent Privacy Changes", "View your privacy history and restore previous settings", "history", on_click=lambda: app.open("privacy/history")),
-
-        SettingRow(dashboard, "Activity & Personalization", "Review activity history and personalization settings", "history", on_click=lambda: app.open("privacy/activity"))
     ]
 
     for index, row in enumerate(dashboard_rows):
