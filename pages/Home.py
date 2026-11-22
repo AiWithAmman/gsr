@@ -2,51 +2,71 @@ import platform
 import tkinter as tk
 
 from Components import Theme as T
-from Components.Buttons import Button
-from Components.Cards import SettingRow, paragraph, section_header, stack
+from Components.Cards import SettingRow, on_off, section_header, stack
+
+
+def windows_name():
+    if platform.system() != "Windows":
+        return platform.system()+" "+platform.release()
+    parts= platform.version().split(".")
+    if len(parts) >= 3 and parts[2].isdigit() and int(parts[2]) >= 22000:
+        return "Windows 11"
+    return "Windows "+platform.release()
 
 
 def build(parent, app):
-    hero= tk.Frame(parent, bg=T.CARD, highlightthickness=1, highlightbackground=T.CARD_BORDER,
-                    highlightcolor=T.CARD_BORDER)
-    stack(hero)
-    inner= tk.Frame(hero, bg=T.CARD)
+    store= app.store
+
+    pc_card= tk.Frame(parent, bg=T.CARD, highlightthickness=1, highlightbackground=T.CARD_BORDER,
+                      highlightcolor=T.CARD_BORDER)
+    stack(pc_card)
+    inner= tk.Frame(pc_card, bg=T.CARD)
     inner.pack(fill="x", padx=T.px(20), pady=T.px(20))
+
     screen= tk.Canvas(inner, width=T.px(160), height=T.px(100), bg=T.CARD, highlightthickness=0)
     screen.create_rectangle(4, 4, T.px(156), T.px(90), fill="#2b6cb0", outline="#1b1b1b", width=3)
     screen.create_line(T.px(60), T.px(96), T.px(100), T.px(96), width=3, fill="#1b1b1b")
     screen.pack(side="left")
+
+    pc_name= platform.node()
+    if pc_name == "":
+        pc_name="DESKTOP-PC"
     info= tk.Frame(inner, bg=T.CARD)
     info.pack(side="left", padx=T.px(20), fill="x", expand=True)
-    tk.Label(info, text=platform.node() or "DESKTOP-PC", font=T.font(14, "semibold"), bg=T.CARD,
-             fg=T.TEXT, anchor="w").pack(fill="x")
-    tk.Label(info, text=f"{platform.system()} {platform.release()}", font=T.font(10), bg=T.CARD,
+    tk.Label(info, text=pc_name, font=T.font(14, "semibold"), bg=T.CARD, fg=T.TEXT,
+             anchor="w").pack(fill="x")
+    tk.Label(info, text=windows_name(), font=T.font(10), bg=T.CARD,
              fg=T.SUBTEXT, anchor="w").pack(fill="x")
 
-    section_header(parent, "Recommended settings")
-    store= app.store
-    links= [
-        ("privacy", "Privacy & security", "Review security and the permissions apps have", "privacy"),
-        ("privacy/diagnostics", "Diagnostics & feedback", "Choose what diagnostic data is sent", "diagnostic"),
-        ("privacy/location", "Location", "On" if store.get("perm.location.access", True) else "Off", "location"),
-        ("privacy/camera", "Camera", "On" if store.get("perm.camera.access", True) else "Off", "camera"),
-        ("privacy/microphone", "Microphone", "On" if store.get("perm.microphone.access", True) else "Off", "microphone"),
-        ("privacy/windows-security", "Windows Security", "No actions needed.", "shield"),
-    ]
-    for route, title, desc, icon in links:
-        stack(SettingRow(parent, title, desc, icon, on_click=lambda r=route: app.open(r)))
+    section_header(parent, "Your privacy")
+
+    def go_privacy():
+        app.open("privacy")
+
+    def go_camera():
+        app.open("privacy/camera")
+
+    def go_microphone():
+        app.open("privacy/microphone")
+
+    def go_location():
+        app.open("privacy/location")
+
+    def go_history():
+        app.open("privacy/history")
+
+    stack(SettingRow(parent, "Privacy & security", "See and change what Windows and apps can access",
+                     "privacy", on_click=go_privacy))
+    stack(SettingRow(parent, "Camera", "Camera access: "+on_off(store.get("perm.camera.access", True)),
+                     "camera", on_click=go_camera))
+    stack(SettingRow(parent, "Microphone",
+                     "Microphone access: "+on_off(store.get("perm.microphone.access", True)),
+                     "microphone", on_click=go_microphone))
+    stack(SettingRow(parent, "Location", "Location access: "+on_off(store.get("perm.location.access", True)),
+                     "location", on_click=go_location))
+    stack(SettingRow(parent, "Recent privacy changes", "Review and restore settings you changed",
+                     "history", on_click=go_history))
 
 
-def make_placeholder(title):
-    def build_placeholder(parent, app):
-        card= tk.Frame(parent, bg=T.CARD, highlightthickness=1, highlightbackground=T.CARD_BORDER,
-                        highlightcolor=T.CARD_BORDER)
-        stack(card)
-        inner= tk.Frame(card, bg=T.CARD)
-        inner.pack(fill="x", padx=T.px(20), pady=T.px(20))
-        paragraph(inner, f"{title} hasn't been built in this clone yet.", bg=T.CARD, fg=T.TEXT)
-        paragraph(inner, "Privacy & security is fully implemented — head there to try it out.",
-                  bg=T.CARD)
-        Button(inner, "Go to Privacy & security", accent=True,
-               command=lambda: app.open("privacy")).pack(anchor="w", pady=(T.px(6), 0))
-    return build_placeholder
+def routes():
+    return {"home": ("Home", build)}

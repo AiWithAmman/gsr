@@ -3,8 +3,8 @@ from tkinter import messagebox, ttk
 
 from Components import Theme as T
 from Components.Buttons import Button
-from Components.Cards import (Expander, SettingRow, paragraph, privacy_resources, section_header,
-                              stack)
+from Components.Cards import (Expander, SettingRow, on_off, paragraph, privacy_resources,
+                              section_header, stack)
 
 FEEDBACK_FREQUENCIES= ["Automatically (Recommended)", "Always", "Once a day", "Once a week", "Never"]
 
@@ -57,13 +57,15 @@ def build(parent, app):
 
     view.row("Turn on the Diagnostic Data Viewer (uses up to 1 GB of hard drive space)",
              toggle=store.get("diag.viewer", False), on_toggle=viewer_changed)
+    def show_viewer():
+        text= "Optional diagnostic data: "+on_off(store.get("diag.optional"))
+        text= text+"\nInking & typing: "+on_off(store.get("diag.inking"))
+        text= text+"\nTailored experiences: "+on_off(store.get("diag.tailored"))
+        messagebox.showinfo("Diagnostic Data Viewer", text)
+
     f= view.frame()
-    open_btn= Button(f, "Open Diagnostic Data Viewer", enabled=store.get("diag.viewer", False),
-                      command=lambda: messagebox.showinfo(
-                          "Diagnostic Data Viewer",
-                          "Optional diagnostic data: "+("On" if store.get("diag.optional") else "Off")
-                          + "\nInking & typing: "+("On" if store.get("diag.inking") else "Off")
-                          + "\nTailored experiences: "+("On" if store.get("diag.tailored") else "Off")))
+    open_btn= Button(f, "Open Diagnostic Data Viewer", command=show_viewer,
+                     enabled=store.get("diag.viewer", False))
     open_btn.pack(anchor="w")
 
     delete= stack(Expander(parent, "Delete diagnostic data",
@@ -84,15 +86,16 @@ def build(parent, app):
 
     section_header(parent, "Feedback")
 
-    def frequency_box(p):
-        box= ttk.Combobox(p, values=FEEDBACK_FREQUENCIES, state="readonly", width=26)
-        box.set(store.get("diag.feedback_frequency", FEEDBACK_FREQUENCIES[0]))
-        box.bind("<<ComboboxSelected>>",
-                 lambda e: (store.set("diag.feedback_frequency", box.get()), box.selection_clear()))
-        return box
+    row= stack(SettingRow(parent, "Feedback frequency", "Windows should ask for my feedback", "feedback"))
+    box= ttk.Combobox(row.right_frame, values=FEEDBACK_FREQUENCIES, state="readonly", width=26)
+    box.set(store.get("diag.feedback_frequency", FEEDBACK_FREQUENCIES[0]))
+    box.pack(side="right")
 
-    stack(SettingRow(parent, "Feedback frequency", "Windows should ask for my feedback", "feedback",
-                     right=frequency_box))
+    def frequency_changed(event):
+        store.set("diag.feedback_frequency", box.get())
+        box.selection_clear()
+
+    box.bind("<<ComboboxSelected>>", frequency_changed)
 
     privacy_resources(parent)
 

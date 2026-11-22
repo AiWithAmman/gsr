@@ -4,8 +4,8 @@ from tkinter import messagebox
 
 from Components import Theme as T
 from Components.Buttons import Button
-from Components.Cards import (Expander, SettingRow, paragraph, privacy_resources, radio_group,
-                              section_header, stack, toggle_row)
+from Components.Cards import (Expander, SettingRow, card_grid, option_label, paragraph,
+                              privacy_resources, radio_group, section_header, stack, toggle_row)
 
 SECURITY= [
     ("privacy/windows-security", "Windows Security",
@@ -67,7 +67,9 @@ APP_PERMISSIONS= [
 
 
 def _on_off(value):
-    return "On" if value else "Off"
+    if value:
+        return "On"
+    return "Off"
 
 
 def build_main(parent, app):
@@ -76,34 +78,19 @@ def build_main(parent, app):
 
     section_header(parent, "Privacy Dashboard")
 
-    dashboard = tk.Frame(parent, bg=T.BG)
-    dashboard.pack(fill="x", pady=(0, T.px(8)))
+    card_grid(parent, [
+        ("Recent Privacy Changes", "View your privacy history and restore previous settings", "history", lambda: app.open("privacy/history")),
 
-    dashboard.grid_columnconfigure(0, weight=1, uniform="dashboard")
-    dashboard.grid_columnconfigure(1, weight=1, uniform="dashboard")
+        ("Activity & Personalization", "Review activity history and personalization settings", "history", lambda: app.open("privacy/activity")),
 
-    dashboard_rows = [
-        SettingRow(dashboard, "Recent Privacy Changes", "View your privacy history and restore previous settings", "history", on_click=lambda: app.open("privacy/history")),
+        ("Camera", f"Camera access: {_on_off(store.get('perm.camera.access', True))}", "camera", lambda: app.open("privacy/camera")),
 
-        SettingRow(dashboard, "Activity & Personalization", "Review activity history and personalization settings", "history", on_click=lambda: app.open("privacy/activity")),
+        ("Microphone", f"Microphone access: {_on_off(store.get('perm.microphone.access', True))}", "microphone", lambda: app.open("privacy/microphone")),
 
-        SettingRow(dashboard, "Camera", f"Camera access: {_on_off(store.get('perm.camera.access', True))}", "camera", on_click = lambda: app.open("privacy/camera")),
+        ("Location", f"Location access: {_on_off(store.get('perm.location.access', True))}", "location", lambda: app.open("privacy/location")),
 
-        SettingRow(dashboard, "Microphone", f"Microphone access: {_on_off(store.get('perm.microphone.access', True))}", "microphone", on_click = lambda: app.open("privacy/microphone")),
-
-        SettingRow(dashboard, "Location", f"Location access: {_on_off(store.get('perm.location.access', True))}", "location", on_click=lambda: app.open("privacy/location")),
-
-        SettingRow(dashboard, "Diagnostic Data", "View your diagnostic and feedback settings", "diagnostic", on_click=lambda: app.open("privacy/diagnostics")),
-    ]
-
-    for index, row in enumerate(dashboard_rows):
-        row.grid(
-            row=index // 2,
-            column=index % 2,
-            sticky="nsew",
-            padx=T.px(4),
-            pady=T.px(4)
-        )
+        ("Diagnostic Data", "View your diagnostic and feedback settings", "diagnostic", lambda: app.open("privacy/diagnostics")),
+    ])
 
     section_header(parent, "Security")
     for route, title, desc, icon in SECURITY:
@@ -334,11 +321,14 @@ SAFESEARCH= [
 
 def build_search_permissions(parent, app):
     store= app.store
-    labels= {v: l for v, l, _ in SAFESEARCH}
-    exp= stack(Expander(parent, "SafeSearch",
-                         labels[store.get("search.safesearch", "moderate")], "search"))
+    current= store.get("search.safesearch", "moderate")
+    exp= stack(Expander(parent, "SafeSearch", option_label(SAFESEARCH, current), "search"))
+
+    def safesearch_changed(value):
+        exp.header.set_description(option_label(SAFESEARCH, value))
+
     radio_group(exp.frame(), store, "search.safesearch", SAFESEARCH, "moderate",
-                on_change=lambda v: exp.header.set_description(labels[v]))
+                on_change=safesearch_changed)
 
     section_header(parent, "Cloud content search")
     toggle_row(parent, store, "search.cloud_microsoft", "Microsoft account",
@@ -351,10 +341,11 @@ def build_search_permissions(parent, app):
     section_header(parent, "History")
     toggle_row(parent, store, "search.history", "Search history on this device",
                "Improve search results by using your search history on this device", icon="history")
-    stack(SettingRow(parent, "Delete search history on this device", icon="delete",
-                     right=lambda p: Button(p, "Clear device search history",
-                                            command=lambda: messagebox.showinfo(
-                                                "Search history", "Device search history cleared."))))
+    def clear_search_history():
+        messagebox.showinfo("Search history", "Device search history cleared.")
+
+    row= stack(SettingRow(parent, "Delete search history on this device", icon="delete"))
+    Button(row.right_frame, "Clear device search history", command=clear_search_history).pack(side="right")
 
     section_header(parent, "More settings")
     toggle_row(parent, store, "search.highlights", "Show search highlights",
@@ -370,20 +361,24 @@ FIND_MY_FILES= [
 
 def build_searching_windows(parent, app):
     store= app.store
-    labels= {v: l for v, l, _ in FIND_MY_FILES}
-    exp= stack(Expander(parent, "Find my files",
-                         labels[store.get("searching.mode", "classic")], "searching", expanded=True))
-    radio_group(exp.frame(), store, "searching.mode", FIND_MY_FILES, "classic",
-                on_change=lambda v: exp.header.set_description(labels[v]))
+    current= store.get("searching.mode", "classic")
+    exp= stack(Expander(parent, "Find my files", option_label(FIND_MY_FILES, current), "searching",
+                        expanded=True))
+
+    def mode_changed(value):
+        exp.header.set_description(option_label(FIND_MY_FILES, value))
+
+    radio_group(exp.frame(), store, "searching.mode", FIND_MY_FILES, "classic", on_change=mode_changed)
 
     toggle_row(parent, store, "searching.respect_power", "Respect power settings when indexing",
                "Indexing pauses when battery saver is on or when your device is on low power",
                icon="health")
     section_header(parent, "Excluded folders")
-    stack(SettingRow(parent, "Add an excluded folder", icon="folder",
-                     right=lambda p: Button(p, "Add an excluded folder",
-                                            command=lambda: messagebox.showinfo(
-                                                "Excluded folders", "Folder picker is not available in this clone."))))
+    def add_folder():
+        messagebox.showinfo("Excluded folders", "Folder picker is not available in this clone.")
+
+    row= stack(SettingRow(parent, "Add an excluded folder", icon="folder"))
+    Button(row.right_frame, "Add an excluded folder", command=add_folder).pack(side="right")
     for folder in (r"C:\ProgramData", r"C:\Users\Default\AppData", r"C:\Windows"):
         stack(SettingRow(parent, folder, icon="folder"))
 
@@ -394,7 +389,7 @@ def build_searching_windows(parent, app):
     privacy_resources(parent)
 
 
-def make_permission_page(slug, title, noun, apps, desktop):
+def make_permission_page(slug, title, noun, icon, apps, desktop):
     def build(parent, app):
         store= app.store
         master_key=f"perm.{slug}.access"
@@ -411,11 +406,13 @@ def make_permission_page(slug, title, noun, apps, desktop):
             if desktop_row:
                 desktop_row.set_enabled(master_on)
 
-        master_title="Location services" if slug == "location" else f"{title} access"
+        if slug == "location":
+            master_title="Location services"
+        else:
+            master_title= title+" access"
         toggle_row(parent, store, master_key, master_title,
                    f"Anyone using this device can choose if their apps have access to {noun} "
-                   f"when this is on", icon=dict((s, i) for s, _, _, i, _, _ in APP_PERMISSIONS)[slug],
-                   on_change=refresh)
+                   f"when this is on", icon=icon, on_change=refresh)
 
         apps_row= toggle_row(parent, store, apps_key, f"Let apps access your {noun}",
                               f"Choose which apps can access your {noun}", icon="apps",
@@ -436,17 +433,20 @@ def make_permission_page(slug, title, noun, apps, desktop):
 
         if slug == "location":
             section_header(parent, "Default location")
-            stack(SettingRow(parent, "Default location",
-                             "Windows, apps, and services can use this when we can't detect a more "
-                             "exact location on this PC", "location",
-                             right=lambda p: Button(p, "Set default",
-                                                    command=lambda: messagebox.showinfo(
-                                                        "Default location", "Default location saved."))))
-            stack(SettingRow(parent, "Location history",
-                             "Clear history of location data stored on this device", "history",
-                             right=lambda p: Button(p, "Clear",
-                                                    command=lambda: messagebox.showinfo(
-                                                        "Location history", "Location history cleared."))))
+
+            def set_default():
+                messagebox.showinfo("Default location", "Default location saved.")
+
+            def clear_location_history():
+                messagebox.showinfo("Location history", "Location history cleared.")
+
+            row= stack(SettingRow(parent, "Default location",
+                                  "Windows, apps, and services can use this when we can't detect a more "
+                                  "exact location on this PC", "location"))
+            Button(row.right_frame, "Set default", command=set_default).pack(side="right")
+            row= stack(SettingRow(parent, "Location history",
+                                  "Clear history of location data stored on this device", "history"))
+            Button(row.right_frame, "Clear", command=clear_location_history).pack(side="right")
 
         refresh()
         privacy_resources(parent)
@@ -469,6 +469,6 @@ def routes():
         "privacy/searching-windows": ("Searching Windows", build_searching_windows),
         "privacy/history": ("Privacy activity history", build_privacy_history),
     }
-    for slug, title, noun, _icon, apps, desktop in APP_PERMISSIONS:
-        r[f"privacy/{slug}"]= (title, make_permission_page(slug, title, noun, apps, desktop))
+    for slug, title, noun, icon, apps, desktop in APP_PERMISSIONS:
+        r["privacy/"+slug]= (title, make_permission_page(slug, title, noun, icon, apps, desktop))
     return r

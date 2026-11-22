@@ -67,7 +67,7 @@ def px(value):
 
 
 def font(size=10, weight="normal"):
-    if weight == "semibold":
+    if weight == "semibold" or weight == "bold":
         if _text_family.startswith("Segoe"):
             return ("Segoe UI Semibold", size)
         return (_text_family, size, "bold")

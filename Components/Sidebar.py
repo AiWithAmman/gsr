@@ -1,47 +1,68 @@
 import tkinter as tk
 
 from Components import Theme as T
-from Components.Buttons import pointer_inside
+from Components.Buttons import mouse_is_over
 
 PLACEHOLDER="Find a setting"
 
 
 class NavItem(tk.Frame):
-    def __init__(self, parent, key, text, icon, command):
-        super().__init__(parent, bg=T.BG, height=T.px(36), cursor="hand2")
+    def __init__(self, parent, key, text, icon, command, placeholder):
+        if placeholder:
+            cursor="arrow"
+            color= T.SUBTEXT
+        else:
+            cursor="hand2"
+            color= T.TEXT
+        super().__init__(parent, bg=T.BG, height=T.px(36), cursor=cursor)
         self.pack_propagate(False)
         self.key= key
         self.command= command
+        self.placeholder= placeholder
         self.selected=False
 
-        self.icon= tk.Label(self, text=T.glyph(icon), font=T.icon_font(12), bg=T.BG, fg=T.TEXT,
-                             width=2, cursor="hand2")
+        self.icon= tk.Label(self, text=T.glyph(icon), font=T.icon_font(12), bg=T.BG, fg=color,
+                            width=2, cursor=cursor)
         self.icon.pack(side="left", padx=(T.px(14), T.px(10)))
-        self.label= tk.Label(self, text=text, font=T.font(10), bg=T.BG, fg=T.TEXT, anchor="w",
-                              cursor="hand2")
+        self.label= tk.Label(self, text=text, font=T.font(10), bg=T.BG, fg=color, anchor="w",
+                             cursor=cursor)
         self.label.pack(side="left", fill="x", expand=True)
         self.indicator= tk.Frame(self, bg=T.BG, width=T.px(3))
         self.indicator.place(x=0, rely=0.5, anchor="w", height=T.px(16))
 
-        for w in (self, self.icon, self.label, self.indicator):
-            w.bind("<Button-1>", lambda e: self.command(self.key))
-            w.bind("<Enter>", lambda e: self._paint(hover=True))
-            w.bind("<Leave>", lambda e: self._paint(hover=pointer_inside(self)))
+        for w in [self, self.icon, self.label, self.indicator]:
+            w.bind("<Button-1>", self.clicked)
+            w.bind("<Enter>", self.mouse_enter)
+            w.bind("<Leave>", self.mouse_leave)
+
+    def clicked(self, event):
+        self.command(self.key)
+
+    def mouse_enter(self, event):
+        if not self.placeholder:
+            self._paint(True)
+
+    def mouse_leave(self, event):
+        self._paint(mouse_is_over(self))
 
     def set_selected(self, selected):
         self.selected= selected
-        self._paint(hover=False)
+        self._paint(False)
 
-    def _paint(self, hover=False):
+    def _paint(self, hover):
         if self.selected:
             bg= T.NAV_SELECTED
         elif hover:
             bg= T.NAV_HOVER
         else:
             bg= T.BG
-        for w in (self, self.icon, self.label):
-            w.configure(bg=bg)
-        self.indicator.configure(bg=T.ACCENT if self.selected else bg)
+        self.configure(bg=bg)
+        self.icon.configure(bg=bg)
+        self.label.configure(bg=bg)
+        if self.selected:
+            self.indicator.configure(bg=T.ACCENT)
+        else:
+            self.indicator.configure(bg=bg)
 
 
 class Sidebar(tk.Frame):
@@ -58,7 +79,11 @@ class Sidebar(tk.Frame):
         nav= tk.Frame(self, bg=T.BG)
         nav.pack(fill="x", padx=(T.px(8), T.px(12)), pady=(T.px(4), 0))
         for key, text, icon in items:
-            item= NavItem(nav, key, text, icon, on_select)
+            if key == "home" or key == "privacy":
+                placeholder=False
+            else:
+                placeholder=True
+            item= NavItem(nav, key, text, icon, on_select, placeholder)
             item.pack(fill="x", pady=(0, T.px(2)))
             self.items[key]= item
 
@@ -91,7 +116,11 @@ class Sidebar(tk.Frame):
         self.entry.bind("<FocusIn>", self._focus_in)
         self.entry.bind("<FocusOut>", self._focus_out)
         self.entry.bind("<Return>", self._submit)
-        self.entry.bind("<Escape>", lambda e: (self.entry.delete(0, "end"), self.focus_set()))
+        self.entry.bind("<Escape>", self._clear)
+
+    def _clear(self, event):
+        self.entry.delete(0, "end")
+        self.focus_set()
 
     def _focus_in(self, _event):
         if self.entry.get() == PLACEHOLDER:
@@ -111,5 +140,8 @@ class Sidebar(tk.Frame):
             self.on_search(text)
 
     def select(self, key):
-        for k, item in self.items.items():
-            item.set_selected(k == key)
+        for item_key in self.items:
+            if item_key == key:
+                self.items[item_key].set_selected(True)
+            else:
+                self.items[item_key].set_selected(False)

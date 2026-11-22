@@ -45,16 +45,22 @@ class WindowsSettings:
         self.notification_timer = None
         self.store.add_listener(self._on_privacy_setting_changed)
 
-        self.routes= {"home": ("Home", Home.build)}
-        for key, title, _icon in NAV_ITEMS:
-            self.routes.setdefault(key, (title, Home.make_placeholder(title)))
+        self.routes= {}
+        self.routes.update(Home.routes())
         self.routes.update(Privacy_security.routes())
         self.routes.update(Diagnostic.routes())
 
         self._build_layout()
-        root.bind("<Alt-Left>", lambda e: self.back())
-        root.bind("<BackSpace>", lambda e: self.back() if not isinstance(root.focus_get(), tk.Entry) else None)
-        self.open("privacy")
+        root.bind("<Alt-Left>", self.back_key)
+        root.bind("<BackSpace>", self.backspace_key)
+        self.open("home")
+
+    def back_key(self, event):
+        self.back()
+
+    def backspace_key(self, event):
+        if not isinstance(self.root.focus_get(), tk.Entry):
+            self.back()
 
     def _build_layout(self):
         self.root.columnconfigure(1, weight=1)
@@ -65,13 +71,13 @@ class WindowsSettings:
         self.back_btn= tk.Label(top, text=T.glyph("back"), font=T.icon_font(10), bg=T.BG,
                                  fg=T.TEXT, width=4, pady=T.px(4))
         self.back_btn.pack(side="left")
-        self.back_btn.bind("<Button-1>", lambda e: self.back())
-        self.back_btn.bind("<Enter>", lambda e: self.history and self.back_btn.configure(bg=T.NAV_HOVER))
-        self.back_btn.bind("<Leave>", lambda e: self.back_btn.configure(bg=T.BG))
+        self.back_btn.bind("<Button-1>", self.back_key)
+        self.back_btn.bind("<Enter>", self.back_hover)
+        self.back_btn.bind("<Leave>", self.back_unhover)
         tk.Label(top, text="Settings", font=T.font(9), bg=T.BG, fg=T.TEXT).pack(side="left",
                                                                                padx=(T.px(4), 0))
 
-        self.sidebar= Sidebar(self.root, NAV_ITEMS, on_select=self.open, on_search=self.search)
+        self.sidebar= Sidebar(self.root, NAV_ITEMS, on_select=self.nav_clicked, on_search=self.search)
         self.sidebar.grid(row=1, column=0, sticky="ns")
 
         content= tk.Frame(self.root, bg=T.BG)
@@ -81,23 +87,39 @@ class WindowsSettings:
         self.page_host= tk.Frame(content, bg=T.BG)
         self.page_host.pack(fill="both", expand=True)
 
+    def nav_clicked(self, key):
+        if key == "home" or key == "privacy":
+            self.open(key)
+            return
+        for item_key, title, icon in NAV_ITEMS:
+            if item_key == key:
+                messagebox.showinfo(title, title+" is a placeholder.\n\n"
+                                    "This project only focuses on Privacy & security.")
+
+    def back_hover(self, event):
+        if self.history:
+            self.back_btn.configure(bg=T.NAV_HOVER)
+
+    def back_unhover(self, event):
+        self.back_btn.configure(bg=T.BG)
+
     def _render_header(self, page_id):
         for w in self.header.winfo_children():
             w.destroy()
-        parts= page_id.split("/")
-        crumbs= ["/".join(parts[:i+1]) for i in range(len(parts))]
-        for i, crumb in enumerate(crumbs):
-            title= self.routes[crumb][0]
-            last= i == len(crumbs)-1
-            lbl= tk.Label(self.header, text=title, font=T.font(20, "semibold"), bg=T.BG,
-                           fg=T.TEXT if last else T.SUBTEXT, cursor="arrow" if last else "hand2")
-            lbl.pack(side="left")
-            if not last:
-                lbl.bind("<Button-1>", lambda e, c=crumb: self.open(c))
-                lbl.bind("<Enter>", lambda e, l=lbl: l.configure(fg=T.TEXT))
-                lbl.bind("<Leave>", lambda e, l=lbl: l.configure(fg=T.SUBTEXT))
-                tk.Label(self.header, text=T.glyph("chevron_right"), font=T.icon_font(12), bg=T.BG,
-                         fg=T.SUBTEXT).pack(side="left", padx=T.px(12))
+
+        if "/" in page_id:
+            parent_id= page_id.split("/")[0]
+            parent_title= self.routes[parent_id][0]
+            parent_label= tk.Label(self.header, text=parent_title, font=T.font(20, "semibold"),
+                                   bg=T.BG, fg=T.SUBTEXT, cursor="hand2")
+            parent_label.pack(side="left")
+            parent_label.bind("<Button-1>", lambda e: self.open(parent_id))
+            tk.Label(self.header, text=T.glyph("chevron_right"), font=T.icon_font(12), bg=T.BG,
+                     fg=T.SUBTEXT).pack(side="left", padx=T.px(12))
+
+        title= self.routes[page_id][0]
+        tk.Label(self.header, text=title, font=T.font(20, "semibold"), bg=T.BG,
+                 fg=T.TEXT).pack(side="left")
 
     def open(self, page_id, push=True):
         if page_id not in self.routes:
@@ -114,23 +136,34 @@ class WindowsSettings:
         scroller.pack(fill="both", expand=True)
         body= tk.Frame(scroller.inner, bg=T.BG)
         body.pack(fill="x", padx=(T.px(40), T.px(28)), pady=(0, T.px(36)))
-        self.routes[page_id][1](body, self)
+        title, build= self.routes[page_id]
+        build(body, self)
 
-        self.back_btn.configure(fg=T.TEXT if self.history else T.DISABLED,
-                                cursor="hand2" if self.history else "arrow")
+        if self.history:
+            self.back_btn.configure(fg=T.TEXT, cursor="hand2")
+        else:
+            self.back_btn.configure(fg=T.DISABLED, cursor="arrow")
 
     def back(self):
         if self.history:
-            self.open(self.history.pop(), push=False)
+            last_page= self.history.pop()
+            self.open(last_page, push=False)
 
     def search(self, text):
         query= text.lower()
-        matches= [rid for rid, (title, _b) in self.routes.items() if query in title.lower()]
-        if not matches:
-            messagebox.showinfo("Settings", f"No results for “{text}”.")
-            return
-        matches.sort(key=lambda rid: (not self.routes[rid][0].lower().startswith(query), len(rid)))
-        self.open(matches[0])
+        found=None
+        for page_id in self.routes:
+            title= self.routes[page_id][0].lower()
+            if title.startswith(query):
+                found= page_id
+                break
+            if query in title and found is None:
+                found= page_id
+
+        if found is None:
+            messagebox.showinfo("Settings", "No results for "+text)
+        else:
+            self.open(found)
 
     def _on_privacy_setting_changed(self, event):
         key = event["key"]

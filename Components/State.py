@@ -1,5 +1,4 @@
 import json
-import os
 import datetime
 
 
@@ -10,9 +9,7 @@ class SettingsStore:
         self.data={}
         try:
             with open(path, "r", encoding="utf-8") as f:
-                loaded= json.load(f)
-            if isinstance(loaded, dict):
-                self.data= loaded
+                self.data= json.load(f)
         except (OSError, ValueError):
             self.data={}
 
@@ -34,10 +31,8 @@ class SettingsStore:
 
     def save(self):
         try:
-            tmp= self.path+".tmp"
-            with open(tmp, "w", encoding="utf-8") as f:
-                json.dump(self.data, f, indent=2, sort_keys=True)
-            os.replace(tmp, self.path)
+            with open(self.path, "w", encoding="utf-8") as f:
+                json.dump(self.data, f, indent=2)
         except OSError:
             pass
 
