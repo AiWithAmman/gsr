@@ -28,12 +28,6 @@ We only rebuilt Privacy & security. The app opens on a basic Home page like real
 - A back button and breadcrumbs at the top. `Alt + ←` goes back too.
 - Your switches get saved, so they're still there next time you open it
 
-## Download
-
-If you just want to try it, grab `PrivacySettings.exe` from the [Releases](../../releases) page and double-click it. You don't need Python.
-
-Windows might show a "Windows protected your PC" warning since the file isn't signed. Click **More info → Run anyway**.
-
 ## Running from the code
 
 You need Python 3.8 or newer. tkinter comes with the normal Windows installer, and there's nothing else to install.
