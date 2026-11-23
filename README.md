@@ -42,15 +42,6 @@ If `python` doesn't work, try `py Main.py`.
 
 It runs on Mac and Linux too, but it looks best on Windows 11 because it uses the Segoe UI font and Windows icons.
 
-## Building the .exe yourself
-
-```bash
-pip install pyinstaller
-pyinstaller --onefile --windowed --name PrivacySettings Main.py
-```
-
-The exe shows up in the `dist` folder.
-
 ## How the files are laid out
 
 ```
@@ -68,27 +59,6 @@ gsr/
     └── Diagnostic.py        # diagnostics & feedback page
 ```
 
-## Adding a page
-
-Every page file has a `build(parent, app)` function that puts the widgets on the page, plus a `routes()` function that gives the page an id and a title:
-
-```python
-from Components.Cards import section_header, toggle_row
-
-def build(parent, app):
-    section_header(parent, "Example")
-    toggle_row(parent, app.store, "example.enabled", "Enable example",
-               "This gets saved automatically", icon="settings")
-
-def routes():
-    return {"privacy/example": ("Example", build)}
-```
-
-Then add `self.routes.update(YourFile.routes())` in `Main.py`. The id decides the breadcrumb, so `privacy/example` shows up as **Privacy & security › Example**.
-
-## Resetting everything
-
-Close the app and delete `settings_state.json`.
 
 ## Heads up
 
