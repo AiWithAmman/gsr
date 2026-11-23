@@ -1,78 +1,82 @@
-# Windows Settings Clone — Privacy & Security
+# Windows Settings Clone (Privacy & Security)
 
-A redesigned version of the Windows 11 **Settings → Privacy & security** section, built with Python and tkinter.
+This is our remake of the **Privacy & security** part of Windows 11 Settings, made with Python and tkinter.
 
-## Goal
+## Why we made this
 
-Most people don't know what their Windows privacy settings do, or what data Windows collects about them. Many can't even find these settings. This project aims to:
+We started with a simple question: do people actually know what their Windows privacy settings do? Most don't, and a lot of them don't know how much data Windows collects about them either. When we looked into it, we found that people couldn't even find half of these settings, because they're buried a few pages deep with vague descriptions.
 
-1. **Help users understand their privacy settings** and what information Windows collects.
-2. **Make privacy settings easier to navigate**, with a Privacy Dashboard that puts the most important settings up front.
-3. **Improve the information given**, with clearer descriptions of what each setting does.
+So the project ended up with three goals:
 
-The project only focuses on Privacy & security. The app opens on a basic Home page, like Windows Settings does, with shortcuts into the privacy settings. The other sidebar sections (System, Apps and so on) are placeholders kept so the app still feels like Windows Settings.
+1. Show people what their privacy settings are and what Windows collects
+2. Make the settings easier to get to, so you don't have to dig through menus
+3. Explain each setting better than the real app does
 
-## Features
+We only rebuilt Privacy & security. The app opens on a basic Home page like real Settings does, and the other sections in the sidebar (System, Apps and so on) are just placeholders so it still looks like Windows.
 
-- **Privacy Dashboard**: quick cards for recent privacy changes, activity, camera, microphone, location and diagnostic data
-- **Privacy history**: see which privacy settings changed and restore earlier values
-- **Change notifications**: a small popup whenever a privacy setting changes
-- **Privacy & security page** with all three groups:
-  - **Security**: Windows Security, Find my device, Device encryption, For developers
-  - **Windows permissions**: General, Speech, Inking & typing personalization, Diagnostics & feedback, Activity history, Search permissions, Searching Windows
-  - **App permissions**: 25 pages including Location, Camera, Microphone, Notifications, Contacts, Calendar, Documents, Pictures and more
-- **Per-app permission toggles.** Turning off a main switch greys out the switches that depend on it.
-- **Diagnostics & feedback page** with expandable sections, the Diagnostic Data Viewer toggle, delete diagnostic data and a feedback frequency dropdown
-- **Sidebar** with a "Find a setting" search for privacy pages. The other sections only show a placeholder message.
-- **Breadcrumb header and back button** (`Alt + ←` also goes back)
-- **Persistent state**: every switch is saved to `settings_state.json`
-- **High-DPI aware**, so it stays sharp on scaled displays
+## What's in it
 
-## Requirements
+- A **Privacy Dashboard** at the top with cards for the important stuff: recent changes, activity, camera, mic, location and diagnostic data
+- A **privacy history** page that shows what you changed and lets you undo it
+- A small **popup** every time a privacy setting changes
+- All the pages from the real Privacy & security section:
+  - Security: Windows Security, Find my device, Device encryption, For developers
+  - Windows permissions: General, Speech, Inking & typing, Diagnostics & feedback, Activity history, Search
+  - App permissions: Location, Camera, Microphone, Notifications, Contacts, Calendar, Documents, Pictures and the rest (25 pages)
+- Per-app toggles. If you turn off the main switch, the app switches under it grey out like they do in Windows.
+- A search box in the sidebar for finding privacy pages
+- A back button and breadcrumbs at the top. `Alt + ←` goes back too.
+- Your switches get saved, so they're still there next time you open it
 
-- Python 3.8 or newer
-- tkinter (included with the standard Python installer on Windows)
+## Download
 
-There are no third-party packages to install.
+If you just want to try it, grab `PrivacySettings.exe` from the [Releases](../../releases) page and double-click it. You don't need Python.
 
-The app runs on macOS and Linux too, but it looks closest to Windows 11 on Windows. It uses the built-in Segoe UI and Segoe Fluent Icons fonts, and falls back to plain text symbols when those aren't installed.
+Windows might show a "Windows protected your PC" warning since the file isn't signed. Click **More info → Run anyway**.
 
-## Getting started
+## Running from the code
+
+You need Python 3.8 or newer. tkinter comes with the normal Windows installer, and there's nothing else to install.
 
 ```bash
-git clone <your-repo-url>
+git clone <repo-url>
 cd gsr
 python Main.py
 ```
 
-If `python` isn't recognized on Windows, use `py Main.py` instead.
+If `python` doesn't work, try `py Main.py`.
 
-## Project structure
+It runs on Mac and Linux too, but it looks best on Windows 11 because it uses the Segoe UI font and Windows icons.
+
+## Building the .exe yourself
+
+```bash
+pip install pyinstaller
+pyinstaller --onefile --windowed --name PrivacySettings Main.py
+```
+
+The exe shows up in the `dist` folder.
+
+## How the files are laid out
 
 ```
 gsr/
-├── Main.py                  # App window, page routing, breadcrumbs, back button, search
+├── Main.py                  # main window, switching pages, back button, search
 ├── Components/
-│   ├── Theme.py             # Colors, fonts, icon glyphs, DPI scaling
-│   ├── Buttons.py           # Toggle switch, push buttons, hyperlinks
-│   ├── Cards.py             # Setting cards, expanders, scroll area, layout helpers
-│   ├── Sidebar.py           # Left navigation pane
-│   └── State.py             # JSON-backed settings store
+│   ├── Theme.py             # colors, fonts, icons
+│   ├── Buttons.py           # toggle switch, buttons, links
+│   ├── Cards.py             # the setting rows, cards, dropdown sections, scrolling
+│   ├── Sidebar.py           # left side menu
+│   └── State.py             # saves the settings to a json file
 └── pages/
-    ├── Home.py              # Basic Home page with PC info and privacy shortcuts
-    ├── Privacy_security.py  # Privacy & security, dashboard, history and all subpages
-    └── Diagnostic.py        # Diagnostics & feedback page
+    ├── Home.py              # home page
+    ├── Privacy_security.py  # privacy page, dashboard, history and the subpages
+    └── Diagnostic.py        # diagnostics & feedback page
 ```
 
-## Adding a new page
+## Adding a page
 
-1. Create a module in `pages/` with a `build(parent, app)` function that adds widgets to `parent`.
-2. Expose it through a `routes()` function that returns `{"route/id": ("Page title", build)}`.
-3. Register it in `Main.py` with `self.routes.update(YourModule.routes())`.
-
-Route IDs set the breadcrumb path. For example, `privacy/camera` shows **Privacy & security › Camera**.
-
-You can build pages from the components in `Components/Cards.py`:
+Every page file has a `build(parent, app)` function that puts the widgets on the page, plus a `routes()` function that gives the page an id and a title:
 
 ```python
 from Components.Cards import section_header, toggle_row
@@ -80,18 +84,23 @@ from Components.Cards import section_header, toggle_row
 def build(parent, app):
     section_header(parent, "Example")
     toggle_row(parent, app.store, "example.enabled", "Enable example",
-               "This value is saved automatically", icon="settings")
+               "This gets saved automatically", icon="settings")
+
+def routes():
+    return {"privacy/example": ("Example", build)}
 ```
 
-## Resetting settings
+Then add `self.routes.update(YourFile.routes())` in `Main.py`. The id decides the breadcrumb, so `privacy/example` shows up as **Privacy & security › Example**.
 
-Close the app and delete `settings_state.json` from the project folder.
+## Resetting everything
 
-## Notes
+Close the app and delete `settings_state.json`.
 
-- This is a prototype. None of the controls change real system settings. Actions like "Open Windows Security" or "Clear history" only show a message.
-- Only Home and Privacy & security are built. The other sidebar sections are placeholders.
-- This project is not affiliated with or endorsed by Microsoft. Windows is a trademark of Microsoft Corporation.
+## Heads up
+
+- Nothing in here changes your real Windows settings. It's a prototype, so buttons like "Open Windows Security" just show a message.
+- Only Home and Privacy & security work. The rest of the sidebar is placeholders.
+- We're not connected to Microsoft in any way. Windows is a trademark of Microsoft.
 
 ## License
 
